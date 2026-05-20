@@ -5,6 +5,7 @@ from typing import Optional
 
 import numpy as np
 from insightface.app import FaceAnalysis
+from insightface.model_zoo import get_model
 
 from backend.config import INSWAPPER_MODEL
 from backend.ep_selector import select_providers
@@ -42,3 +43,28 @@ def detect_largest_face(image: np.ndarray):
 def detect_all_faces(image: np.ndarray) -> list:
     app = get_face_app()
     return app.get(image)
+
+
+_swapper = None
+
+
+def get_swapper():
+    global _swapper
+    if _swapper is None:
+        providers = select_providers()
+        _swapper = get_model(str(INSWAPPER_MODEL), providers=providers)
+    return _swapper
+
+
+def swap_face(target_image: np.ndarray, target_face, source_face) -> np.ndarray:
+    """Swap target_face in target_image with source_face's identity."""
+    swapper = get_swapper()
+    result = swapper.get(target_image, target_face, source_face, paste_back=True)
+    return result
+
+
+def preload() -> None:
+    """Pre-warm face detector and swapper at server startup."""
+    get_face_app()
+    get_swapper()
+    logger.info("FaceSwap models preloaded")
