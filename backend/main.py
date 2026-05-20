@@ -17,6 +17,7 @@ from backend.config import (
     PROCESSING_TIMEOUT_SECONDS,
     PROJECT_ROOT,
     TEMPLATE_FRAMES_DIR,
+    TEMPLATE_VIDEO,
 )
 from backend.face_swap import FaceNotFoundError, preload as preload_models, swap_video_job
 from backend.jobs import JobManager, JobStatus
@@ -47,6 +48,11 @@ job_manager = JobManager()
 @app.get("/")
 async def root():
     return FileResponse(FRONTEND_DIR / "index.html")
+
+
+@app.get("/static/basketball.mp4")
+async def basketball_video():
+    return FileResponse(TEMPLATE_VIDEO, media_type="video/mp4")
 
 
 @app.get("/api/health")
