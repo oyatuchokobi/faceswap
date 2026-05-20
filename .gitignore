@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+models/*.onnx
+models/buffalo_*
+jobs/
+templates/basketball/
+.pytest_cache/
+.coverage
+*.swp
+.DS_Store
