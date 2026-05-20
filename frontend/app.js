@@ -8,7 +8,7 @@ export function showView(name) {
 
 // State machine entry
 document.getElementById('btn-start').addEventListener('click', () => {
-  import('/static/camera.js').then(m => m.startCapture());
+  import('./camera.js').then(m => m.startCapture());
 });
 
 document.getElementById('btn-again').addEventListener('click', () => {
