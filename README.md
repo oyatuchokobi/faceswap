@@ -16,12 +16,11 @@ pip install -r requirements.txt
 - `inswapper_128.onnx` (HuggingFaceミラーから入手)
 - InsightFace buffalo_l (初回起動で自動DL)
 
-## 起動
+## デモ起動
 
-```bash
-# Mac開発
-./start.sh
+1. `./start.sh` (Mac) または `start.bat` (Windows)
+2. 出力に表示される `https://xxxxx.trycloudflare.com` を共有
+3. ブラウザで開いて START
+4. カメラ撮影 → ミニゲーム → 結果動画 → QRでスマホDL
 
-# Windows本番
-start.bat
-```
+`cloudflared` が PATH に必要(`brew install cloudflared` / Windows は GitHub releases)。
