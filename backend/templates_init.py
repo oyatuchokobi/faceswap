@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import cv2
+from insightface.app.common import Face
 
 import backend.config as config
 from backend.video import extract_frames
@@ -41,7 +42,10 @@ def prepare_templates() -> TemplateData:
     if cache_file.exists():
         logger.info("Loading cached template faces")
         with open(cache_file, "rb") as f:
-            faces_per_frame = pickle.load(f)
+            raw = pickle.load(f)
+        # insightface Face inherits dict + __getattr__ returns None, breaking pickle.
+        # Cache as plain dicts and rehydrate via Face(d) on load.
+        faces_per_frame = [[Face(d) for d in frame] for frame in raw]
     else:
         logger.info("Detecting faces in %d template frames", frame_count)
         get_face_app()
@@ -51,8 +55,12 @@ def prepare_templates() -> TemplateData:
             faces_per_frame.append(detect_all_faces(img))
             if (i + 1) % 20 == 0:
                 logger.info("  ... %d / %d", i + 1, frame_count)
+        serializable = [
+            [{"bbox": f.bbox, "kps": f.kps, "embedding": f.embedding} for f in frame]
+            for frame in faces_per_frame
+        ]
         with open(cache_file, "wb") as f:
-            pickle.dump(faces_per_frame, f)
+            pickle.dump(serializable, f)
 
     _cache = TemplateData(frame_count=frame_count, faces_per_frame=faces_per_frame)
     return _cache
