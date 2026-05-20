@@ -1,13 +1,24 @@
 from __future__ import annotations
+import asyncio
 import logging
+import shutil
 from pathlib import Path
 
-from fastapi import FastAPI
+import aiofiles
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from sse_starlette.sse import EventSourceResponse
 
-from backend.config import PROJECT_ROOT
-from backend.jobs import JobManager
+from backend.config import (
+    JOB_TTL_SECONDS,
+    JOBS_DIR,
+    PROCESSING_TIMEOUT_SECONDS,
+    PROJECT_ROOT,
+    TEMPLATE_FRAMES_DIR,
+)
+from backend.face_swap import FaceNotFoundError, swap_video_job
+from backend.jobs import JobManager, JobStatus
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -27,6 +38,91 @@ async def root():
 @app.get("/api/health")
 async def health():
     return {"status": "ok"}
+
+
+@app.post("/api/swap")
+async def create_swap(face: UploadFile = File(...)):
+    job_id = job_manager.create()
+    job_dir = JOBS_DIR / job_id
+    job_dir.mkdir(parents=True, exist_ok=True)
+    face_path = job_dir / "face.jpg"
+
+    contents = await face.read()
+    async with aiofiles.open(face_path, "wb") as f:
+        await f.write(contents)
+
+    result_path = job_dir / "result.mp4"
+
+    async def run() -> None:
+        def progress(pct: int, msg: str) -> None:
+            job_manager.update_progress(job_id, pct, msg)
+        try:
+            await asyncio.wait_for(
+                swap_video_job(
+                    src_face_image_path=str(face_path),
+                    template_frames_dir=TEMPLATE_FRAMES_DIR,
+                    output=result_path,
+                    progress=progress,
+                ),
+                timeout=PROCESSING_TIMEOUT_SECONDS,
+            )
+            job_manager.mark_done(job_id, result_path)
+            asyncio.create_task(_cleanup_after(job_id, JOB_TTL_SECONDS))
+        except FaceNotFoundError as e:
+            job_manager.mark_failed(job_id, f"顔が検出できません: {e}")
+        except asyncio.TimeoutError:
+            job_manager.mark_failed(job_id, "処理がタイムアウトしました")
+        except Exception as e:
+            logger.exception("Job %s failed", job_id)
+            job_manager.mark_failed(job_id, f"内部エラー: {type(e).__name__}")
+
+    task = asyncio.create_task(run())
+    job_manager.attach_task(job_id, task)
+
+    return {"job_id": job_id, "sse_url": f"/api/job/{job_id}"}
+
+
+async def _cleanup_after(job_id: str, delay: int) -> None:
+    await asyncio.sleep(delay)
+    job_dir = JOBS_DIR / job_id
+    shutil.rmtree(job_dir, ignore_errors=True)
+    job_manager.remove(job_id)
+    logger.info("Cleaned up job %s", job_id)
+
+
+@app.get("/api/job/{job_id}")
+async def job_sse(job_id: str):
+    try:
+        job_manager.get(job_id)
+    except KeyError:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    async def event_stream():
+        last_emit = (-1, "")
+        while True:
+            try:
+                job = job_manager.get(job_id)
+            except KeyError:
+                yield {"event": "removed", "data": "job removed"}
+                return
+
+            current = (job.progress, job.message)
+            if current != last_emit:
+                yield {
+                    "event": "progress",
+                    "data": f'{{"progress":{job.progress},"message":"{job.message}","status":"{job.status.value}"}}',
+                }
+                last_emit = current
+
+            if job.status in (JobStatus.DONE, JobStatus.FAILED):
+                yield {
+                    "event": job.status.value,
+                    "data": f'{{"status":"{job.status.value}","message":"{job.message}"}}',
+                }
+                return
+            await asyncio.sleep(0.5)
+
+    return EventSourceResponse(event_stream())
 
 
 app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
