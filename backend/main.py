@@ -2,6 +2,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import shutil
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 import aiofiles
@@ -17,13 +18,26 @@ from backend.config import (
     PROJECT_ROOT,
     TEMPLATE_FRAMES_DIR,
 )
-from backend.face_swap import FaceNotFoundError, swap_video_job
+from backend.face_swap import FaceNotFoundError, preload as preload_models, swap_video_job
 from backend.jobs import JobManager, JobStatus
+from backend.templates_init import prepare_templates
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="FaceSwap Demo")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info("Preloading models and templates...")
+    JOBS_DIR.mkdir(parents=True, exist_ok=True)
+    preload_models()
+    prepare_templates()
+    logger.info("Startup complete")
+    yield
+    logger.info("Shutting down")
+
+
+app = FastAPI(title="FaceSwap Demo", lifespan=lifespan)
 
 FRONTEND_DIR = PROJECT_ROOT / "frontend"
 
