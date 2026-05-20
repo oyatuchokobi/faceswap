@@ -125,4 +125,31 @@ async def job_sse(job_id: str):
     return EventSourceResponse(event_stream())
 
 
+@app.get("/api/result/{job_id}.mp4")
+async def get_result(job_id: str):
+    try:
+        job = job_manager.get(job_id)
+    except KeyError:
+        raise HTTPException(404, "Job not found")
+    if job.status != JobStatus.DONE or not job.result_path or not job.result_path.exists():
+        raise HTTPException(404, "Result not ready")
+    return FileResponse(job.result_path, media_type="video/mp4")
+
+
+@app.get("/api/download/{job_id}.mp4")
+async def download_result(job_id: str):
+    try:
+        job = job_manager.get(job_id)
+    except KeyError:
+        raise HTTPException(404, "Job not found")
+    if job.status != JobStatus.DONE or not job.result_path or not job.result_path.exists():
+        raise HTTPException(404, "Result not ready")
+    return FileResponse(
+        job.result_path,
+        media_type="video/mp4",
+        filename=f"faceswap_{job_id}.mp4",
+        headers={"Content-Disposition": f'attachment; filename="faceswap_{job_id}.mp4"'},
+    )
+
+
 app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")

@@ -40,3 +40,22 @@ async def test_swap_creates_job(client, tmp_path, monkeypatch):
 async def test_job_not_found_returns_404(client):
     res = await client.get("/api/job/does-not-exist")
     assert res.status_code == 404
+
+
+async def test_result_streams_video(client, tmp_path, monkeypatch):
+    from backend.main import job_manager
+    monkeypatch.setattr("backend.config.JOBS_DIR", tmp_path)
+    job_id = job_manager.create()
+    job_dir = tmp_path / job_id
+    job_dir.mkdir()
+    fake_mp4 = job_dir / "result.mp4"
+    fake_mp4.write_bytes(b"\x00\x00\x00\x20ftypisom" + b"\x00" * 200)
+    job_manager.mark_done(job_id, fake_mp4)
+
+    res = await client.get(f"/api/result/{job_id}.mp4")
+    assert res.status_code == 200
+    assert res.headers["content-type"] == "video/mp4"
+
+    res2 = await client.get(f"/api/download/{job_id}.mp4")
+    assert res2.status_code == 200
+    assert "attachment" in res2.headers.get("content-disposition", "")
