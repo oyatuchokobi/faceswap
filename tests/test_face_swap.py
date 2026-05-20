@@ -27,3 +27,26 @@ def test_swap_face_returns_modified_image():
     result = swap_face(tgt_img, tgt_face, src_face)
     assert result.shape == tgt_img.shape
     assert result.dtype == tgt_img.dtype
+
+
+async def test_swap_video_end_to_end(tmp_path):
+    from backend.face_swap import swap_video_job
+    from backend.templates_init import prepare_templates
+    from backend.config import TEMPLATE_FRAMES_DIR
+
+    prepare_templates()
+    src_face_img = str(FIXTURES / "test_face.jpg")
+    output = tmp_path / "result.mp4"
+
+    progress_log = []
+    def cb(pct, msg):
+        progress_log.append((pct, msg))
+
+    await swap_video_job(
+        src_face_image_path=src_face_img,
+        template_frames_dir=TEMPLATE_FRAMES_DIR,
+        output=output,
+        progress=cb,
+    )
+    assert output.exists()
+    assert progress_log[-1][0] == 100
