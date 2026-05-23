@@ -14,7 +14,7 @@
 ### 1. リポジトリ取得
 
 ```bash
-git clone <このリポジトリのURL> faceswap
+git clone https://github.com/oyatuchokobi/faceswap.git
 cd faceswap
 ```
 
@@ -84,6 +84,26 @@ pytest -v
 
 期待: 25 passed(初回 E2E テストは cache 生成のため 3-5 分かかる)
 
+## デモ当日の流れ
+
+1. `start.bat`（Windows）または Colab で起動
+2. コンソール/Cell 6 に表示された URL を参加者に共有（QR化 or LINE等）
+3. 参加者: URL開く → START → カメラ撮影 → ミニゲーム待機 → 結果動画 → QRでスマホDL
+4. 終了: コンソールを閉じる（または Colab: `Runtime` → `Disconnect and delete runtime`）
+
+> `/?mode=stg` を URL 末尾に付けるとカメラなし・画像アップロードのテストモードになる。
+
+## トラブルシューティング
+
+| 症状 | 対処 |
+|------|------|
+| 顔が検出されない | 明るい場所で正面から大きく撮り直し |
+| 処理が5分以上進まない | サーバーを再起動 |
+| カメラが起動しない | ブラウザのカメラ許可を確認 / `?mode=stg` で画像ファイル代用 |
+| cloudflared が開かない | `cloudflared.exe` が同フォルダにあるか確認 |
+| ngrok URL が変わった | 毎回変わる仕様。Cell 6 の最新 URL を共有し直す |
+| キャッシュが壊れた | `del templates\basketball\faces_cache.pkl` 後に再起動 |
+
 ## 既知のハマりどころ
 
 1. **`insightface.app.common.Face` は pickle round-trip 不可** —
@@ -147,33 +167,59 @@ start.sh / start.bat    # 起動スクリプト(uvicorn + cloudflared)
 
 詳細は `docs/superpowers/specs/2026-05-20-faceswap-demo-design.md` 参照。
 
-## Google Colab で動かす（開発・テスト用）
+## Google Colab で動かす
 
-`colab_faceswap.ipynb` を使うと Windows ノートなしで動かせる。
+`colab_faceswap.ipynb` を使うと T4 GPU で高速推論できる（Windows CPU より数倍速い）。
 
-### 準備
+### ファイルの置き場所
 
-1. このプロジェクト一式を Google Drive の `MyDrive/faceswap/` にアップロード
-2. [ngrok](https://ngrok.com/) アカウントを作成し authtoken を取得
-3. Colab で `colab_faceswap.ipynb` を開く
+| ファイル種別 | 置き場所 | 理由 |
+|-------------|---------|------|
+| ソースコード（backend/ frontend/ 等） | **GitHub** | 毎回 git pull で自動取得 |
+| `inswapper_128.onnx`（554MB） | **Google Drive** | 初回だけDL、以降使いまわし |
+| テンプレートフレームキャッシュ | **Google Drive** | 生成に数分かかるため使いまわし |
+| `colab_faceswap.ipynb` | **GitHub** | Colab から直接開ける |
 
-### 実行
+手元でファイルを用意したり Drive にアップロードする必要はない。ノートブックが全部自動でやる。
 
-1. Cell 3 の `PROJECT_PATH` を確認（デフォルト: `/content/drive/MyDrive/faceswap`）
-2. Cell 5 の `NGROK_TOKEN` に authtoken を入力
-3. セルを上から順に実行
-4. Cell 5 に表示された URL をブラウザで開く
+### 必要なもの（初回のみ取得）
+
+- **Google アカウント**（Drive マウント用）
+- **ngrok authtoken** → [dashboard.ngrok.com](https://dashboard.ngrok.com/get-started/your-authtoken) で無料登録して取得
+
+### 初回セットアップ
+
+1. [colab_faceswap.ipynb を Colab で開く](https://colab.research.google.com/github/oyatuchokobi/faceswap/blob/main/colab_faceswap.ipynb)
+2. `Runtime` → `Change runtime type` → **T4 GPU** を選択して保存（**必ず保存ボタンを押す**）
+3. **Cell 1（一番上のセル）** の `NGROK_TOKEN = 'YOUR_NGROK_TOKEN'` を自分のトークンに書き換え
+4. `Runtime` → `Run all`
+
+初回は以下が自動で走る（合計 5〜10 分）:
+- GitHub からコードをクローン
+- Drive に `faceswap-data/` フォルダを作成してシンボリックリンクを設定
+- pip install
+- `inswapper_128.onnx`（554MB）を Drive にダウンロード
+- uvicorn 起動 → ngrok でトンネル開通
+
+5. Cell 6 に表示された URL をブラウザ/スマホで開けば使える
+
+### 2回目以降
+
+Drive にモデルとキャッシュが残っているので手順 1〜3 の後 `Run all` するだけ（3〜5分で起動）。
+
+> 無料 Colab はアイドル 90 分でセッションが切れる。切れたら `Run all` で再起動（モデル再DL不要）。
 
 ### Windows 版との違い
 
 | 項目 | Windows | Colab |
 |------|---------|-------|
-| 推論EP | CPU | **CUDA GPU** |
+| 推論EP | CPU / DirectML | **CUDA GPU** |
 | トンネル | cloudflared | **ngrok** |
 | モデル保存 | ローカル | **Google Drive** |
+| コード取得 | git pull（自動） | git pull（自動） |
 
 > **注意:** 無料 Colab はアイドル 90 分でセッションが切れる。
-> 切れた場合は Cell 4・Cell 5 を再実行するだけで復旧する（モデル再DL不要）。
+> 切れた場合は `Runtime` → `Run all` で再実行（モデル再DL不要）。
 
 ## 後回し項目
 
