@@ -7,8 +7,6 @@ let serverProgress = 0;
 let serverDone = false;
 let dribbleCount = 0;
 let shootCount = 0;
-const DRIBBLE_TARGET = 10;
-const SHOOT_TARGET = 3;
 
 let camStream = null;
 let pose = null;
@@ -75,21 +73,15 @@ function onPoseResults(results) {
   } else {
     bothHandsUpFrames = 0;
   }
-
-  const motionPct = Math.min(100, (dribbleCount / DRIBBLE_TARGET) * 50 + (shootCount / SHOOT_TARGET) * 50);
-  gameProgress = motionPct;
 }
 
 function updateUI() {
   const elapsed = Date.now() - startTime;
-  const elapsedPct = Math.min(100, (elapsed / MIN_DURATION_MS) * 100);
-  const combined = Math.max(elapsedPct, gameProgress, serverProgress * 0.9);
-  document.getElementById('combined-progress').value = combined;
 
-  const msg = serverDone
-    ? '神プレイ完成!まもなく解禁'
-    : `ドリブル ${dribbleCount}/${DRIBBLE_TARGET} | シュート ${shootCount}/${SHOOT_TARGET}`;
-  document.getElementById('game-message').textContent = msg;
+  document.getElementById('combined-progress').value = serverProgress;
+  document.getElementById('server-pct').textContent = `${serverProgress}%`;
+  document.getElementById('game-score').textContent =
+    `🏀 ${dribbleCount}  |  🙌 ${shootCount}`;
 
   if (elapsed >= MIN_DURATION_MS && serverDone) {
     cleanup();
@@ -108,7 +100,6 @@ function cleanup() {
 
 export function setServerProgress(pct, msg) {
   serverProgress = pct;
-  document.getElementById('server-message').textContent = msg || '';
 }
 
 export function setServerDone() {

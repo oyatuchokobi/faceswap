@@ -12,3 +12,6 @@ templates/basketball/
 .coverage
 *.swp
 .DS_Store
+cloudflared.exe
+.claude/settings.local.json
+docs/superpowers/

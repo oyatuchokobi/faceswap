@@ -42,6 +42,19 @@ def extract_frames(video_path: Path, out_dir: Path) -> int:
     return len(list(out_dir.glob("frame_*.jpg")))
 
 
+def _get_video_width(video_path: Path) -> int:
+    result = subprocess.run(
+        [shutil.which("ffprobe") or "ffprobe",
+         "-v", "error",
+         "-select_streams", "v:0",
+         "-show_entries", "stream=width",
+         "-of", "csv=p=0",
+         str(video_path)],
+        capture_output=True, text=True,
+    )
+    return int(result.stdout.strip())
+
+
 def compose_video(
     frames_dir: Path,
     audio_source: Path,
@@ -54,10 +67,15 @@ def compose_video(
 
     Layout:
       [main video stream from frames_dir/frame_*.jpg]
-      [wipe overlay scaled to WIPE_WIDTH_RATIO of width, positioned bottom-right]
+      [wipe overlay scaled to WIPE_WIDTH_RATIO of main video width, positioned bottom-right]
       [audio from audio_source]
     """
     margin = WIPE_MARGIN_PX
+
+    # Compute wipe pixel width relative to the main video (not the wipe image itself)
+    main_w = _get_video_width(audio_source)
+    wipe_w = int(main_w * WIPE_WIDTH_RATIO)
+    wipe_w = wipe_w - (wipe_w % 2)  # must be even for yuv420p
 
     # Check whether audio_source contains an audio stream
     probe = subprocess.run(
@@ -73,13 +91,13 @@ def compose_video(
 
     if has_audio:
         filter_complex = (
-            f"[1:v]scale=iw*{WIPE_WIDTH_RATIO}:-1[wipe];"
+            f"[1:v]scale={wipe_w}:-2[wipe];"
             f"[0:v][wipe]overlay=W-w-{margin}:H-h-{margin}[v]"
         )
         audio_map = ["2:a"]
     else:
         filter_complex = (
-            f"[1:v]scale=iw*{WIPE_WIDTH_RATIO}:-1[wipe];"
+            f"[1:v]scale={wipe_w}:-2[wipe];"
             f"[0:v][wipe]overlay=W-w-{margin}:H-h-{margin}[v];"
             f"anullsrc=r=44100:cl=stereo[a]"
         )

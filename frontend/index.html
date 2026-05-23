@@ -49,9 +49,12 @@
     <canvas id="pose-canvas"></canvas>
     <video id="game-camera" autoplay playsinline hidden></video>
     <div class="hud">
-      <p id="game-message">神プレイへの修行中...</p>
-      <progress id="combined-progress" max="100" value="0"></progress>
-      <p id="server-message"></p>
+      <p id="game-score">🏀 0 &nbsp;|&nbsp; 🙌 0</p>
+      <div class="progress-row">
+        <span class="progress-label">神プレイまで</span>
+        <progress id="combined-progress" max="100" value="0"></progress>
+        <span id="server-pct">0%</span>
+      </div>
     </div>
   </section>
 
