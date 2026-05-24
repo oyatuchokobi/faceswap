@@ -89,36 +89,42 @@ def compose_video(
     )
     has_audio = bool(probe.stdout.strip())
 
-    if has_audio:
-        filter_complex = (
-            f"[1:v]scale={wipe_w}:-2[wipe];"
-            f"[0:v][wipe]overlay=W-w-{margin}:H-h-{margin}[v]"
-        )
-        audio_map = ["2:a"]
-    else:
-        filter_complex = (
-            f"[1:v]scale={wipe_w}:-2[wipe];"
-            f"[0:v][wipe]overlay=W-w-{margin}:H-h-{margin}[v];"
-            f"anullsrc=r=44100:cl=stereo[a]"
-        )
-        audio_map = ["[a]"]
+    filter_complex = (
+        f"[1:v]scale={wipe_w}:-2[wipe];"
+        f"[0:v][wipe]overlay=W-w-{margin}:H-h-{margin}[v]"
+    )
 
-    cmd = [
-        _ffmpeg_bin(),
-        "-y",
-        "-framerate", str(fps),
-        "-i", str(frames_dir / "frame_%06d.jpg"),
-        "-i", str(wipe_image),
-        "-i", str(audio_source),
-        "-filter_complex", filter_complex,
-        "-map", "[v]",
-        "-map", *audio_map,
-        "-c:v", "libx264",
-        "-pix_fmt", "yuv420p",
-        "-c:a", "aac",
-        "-shortest",
-        str(output),
-    ]
+    if has_audio:
+        cmd = [
+            _ffmpeg_bin(),
+            "-y",
+            "-framerate", str(fps),
+            "-i", str(frames_dir / "frame_%06d.jpg"),
+            "-i", str(wipe_image),
+            "-i", str(audio_source),
+            "-filter_complex", filter_complex,
+            "-map", "[v]",
+            "-map", "2:a",
+            "-c:v", "libx264",
+            "-pix_fmt", "yuv420p",
+            "-c:a", "aac",
+            "-shortest",
+            str(output),
+        ]
+    else:
+        cmd = [
+            _ffmpeg_bin(),
+            "-y",
+            "-framerate", str(fps),
+            "-i", str(frames_dir / "frame_%06d.jpg"),
+            "-i", str(wipe_image),
+            "-filter_complex", filter_complex,
+            "-map", "[v]",
+            "-an",
+            "-c:v", "libx264",
+            "-pix_fmt", "yuv420p",
+            str(output),
+        ]
     logger.info("Composing video: %s", " ".join(cmd))
     result = subprocess.run(cmd, capture_output=True, text=True)
     if result.returncode != 0:
