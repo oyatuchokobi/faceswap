@@ -21,7 +21,6 @@ export async function startGame() {
   const camera = document.getElementById('game-camera');
   camStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
   camera.srcObject = camStream;
-  camera.hidden = false;
 
   try {
     await loadScript(POSE_CDN);

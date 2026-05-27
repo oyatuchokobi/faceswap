@@ -52,14 +52,18 @@ async def root():
     return FileResponse(FRONTEND_DIR / "index.html")
 
 
-@app.get("/api/videos/template")
-async def template_video():
-    return FileResponse(TEMPLATE_VIDEO, media_type="video/mp4")
+_VIDEO_ROUTES = {
+    "template": TEMPLATE_VIDEO,
+    "game": GAME_VIDEO,
+}
 
 
-@app.get("/api/videos/game")
-async def game_video():
-    return FileResponse(GAME_VIDEO, media_type="video/mp4")
+@app.get("/api/videos/{name}")
+async def serve_video(name: str):
+    path = _VIDEO_ROUTES.get(name)
+    if path is None:
+        raise HTTPException(404, "Video not found")
+    return FileResponse(path, media_type="video/mp4")
 
 
 @app.get("/api/health")

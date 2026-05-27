@@ -2,6 +2,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import shutil
+import threading
 from pathlib import Path
 from typing import Callable, Optional
 
@@ -56,13 +57,16 @@ def detect_all_faces(image: np.ndarray) -> list:
 
 
 _swapper = None
+_swapper_lock = threading.Lock()
 
 
 def get_swapper():
     global _swapper
     if _swapper is None:
-        providers = select_providers()
-        _swapper = get_model(str(INSWAPPER_MODEL), providers=providers)
+        with _swapper_lock:
+            if _swapper is None:
+                providers = select_providers()
+                _swapper = get_model(str(INSWAPPER_MODEL), providers=providers)
     return _swapper
 
 

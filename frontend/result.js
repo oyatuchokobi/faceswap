@@ -13,9 +13,7 @@ export function showResult() {
   document.getElementById('qr-container').innerHTML = qr.createImgTag(6);
 
   video.src = play;
-  video.play().catch(() => {
-    overlay.classList.add('visible');
-  });
+  video.play().catch(() => {});
 
   video.addEventListener('ended', () => {
     overlay.classList.add('visible');

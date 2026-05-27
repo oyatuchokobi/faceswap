@@ -1,6 +1,6 @@
 # FaceSwap Demo
 
-ユーザーの顔を `templates/basketball.mp4` テンプレ動画に合成して、QRコードでスマホDLできる Web デモアプリ。
+ユーザーの顔を `templates/target.mp4` テンプレ動画に合成して、QRコードでスマホDLできる Web デモアプリ。
 
 ## ステータス
 
@@ -58,7 +58,7 @@ URL 公開用:
 
 ### 5. テンプレ前処理キャッシュ(任意、初回起動で自動生成)
 
-`templates/basketball/` にフレーム展開 + `faces_cache.pkl` が無い場合、初回起動時に自動生成(~1分)。
+`templates/target/` にフレーム展開 + `faces_cache.pkl` が無い場合、初回起動時に自動生成(~1分)。
 
 ### 6. デモ起動
 
@@ -102,7 +102,7 @@ pytest -v
 | カメラが起動しない | ブラウザのカメラ許可を確認 / `?mode=stg` で画像ファイル代用 |
 | cloudflared が開かない | `cloudflared.exe` が同フォルダにあるか確認 |
 | ngrok URL が変わった | 毎回変わる仕様。Cell 6 の最新 URL を共有し直す |
-| キャッシュが壊れた | `del templates\basketball\faces_cache.pkl` 後に再起動 |
+| キャッシュが壊れた | `del templates\target\faces_cache.pkl` 後に再起動 |
 
 ## 既知のハマりどころ
 
@@ -110,17 +110,17 @@ pytest -v
    `Face(dict)` の `__getattr__` が常に None を返す設計で、pickle protocol の `__setstate__` チェックが None.__call__ になり `TypeError: 'NoneType' object is not callable` を出す。
    対処: `backend/templates_init.py` で `bbox`/`kps`/`embedding` を dict として保存、ロード時に `Face(d)` で再構築している。**既存の faces_cache.pkl が古いフォーマットで壊れていたら削除して再生成**:
    ```bash
-   rm templates/basketball/faces_cache.pkl
+   rm templates/target/faces_cache.pkl
    ```
 
-2. **`templates/basketball.mp4` は音声トラック無し** —
-   `compose_video` は ffprobe で検出して `anullsrc` 無音フォールバックを使う。結果動画は無音 mp4 になる。音声付きにしたければ basketball.mp4 を音声付き素材に差し替えれば自動で音声が乗る(コード変更不要)。
+2. **`templates/target.mp4` は音声トラック無し** —
+   `compose_video` は ffprobe で検出して `-an` で無音出力にフォールバックする。音声付きにしたければ target.mp4 を音声付き素材に差し替えれば自動で音声が乗る(コード変更不要)。
 
 3. **Homebrew Python は壊れがち**(Mac) —
    `libexpat` 関連エラーで起動不能になる。`uv venv .venv` で uv 製 Python を使うのが安全。Windows の `python -m venv` は問題なし。
 
 4. **初回 E2E は遅い** —
-   `templates/basketball/faces_cache.pkl` が無いと 121 フレーム × 顔検出で 30秒〜1分。テストの `test_swap_video_end_to_end` は 3-5分かかる(顔検出 + 121フレーム swap + ffmpeg compose)。
+   `templates/target/faces_cache.pkl` が無いと フレーム × 顔検出で 30秒〜1分。テストの `test_swap_video_end_to_end` は 3-5分かかる(顔検出 + フレーム swap + ffmpeg compose)。
 
 ## プロジェクト構成
 
@@ -141,10 +141,10 @@ frontend/
   minigame.js           # MediaPipe Pose + ドリブル/シュート判定
   progress.js           # SSE 購読 + ジョブ提出
   result.js             # 結果動画再生 + QR 生成
-  basketball.mp4        # symlink → ../templates/basketball.mp4
 templates/
-  basketball.mp4        # テンプレ動画(121フレーム、5.04s、24fps、音声無し)
-  basketball/           # 抽出フレーム + faces_cache.pkl(初回自動生成)
+  target.mp4            # テンプレ動画(顔合成先、音声無し)
+  shoot_3piece.mp4      # ミニゲーム参考動画(ループ再生)
+  target/               # 抽出フレーム + faces_cache.pkl(初回自動生成)
 models/
   inswapper_128.onnx    # 顔スワップモデル(手動配置)
 tests/                  # pytest 25 件
