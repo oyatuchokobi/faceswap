@@ -101,7 +101,7 @@ pytest -v
 | 処理が5分以上進まない | サーバーを再起動 |
 | カメラが起動しない | ブラウザのカメラ許可を確認 / `?mode=stg` で画像ファイル代用 |
 | cloudflared が開かない | `cloudflared.exe` が同フォルダにあるか確認 |
-| ngrok URL が変わった | 毎回変わる仕様。Cell 6 の最新 URL を共有し直す |
+| Colab URL が変わった | 毎回変わる仕様。Cell 6 の最新 URL を共有し直す |
 | キャッシュが壊れた | `del templates\target\faces_cache.pkl` 後に再起動 |
 
 ## 既知のハマりどころ
@@ -182,26 +182,24 @@ start.sh / start.bat    # 起動スクリプト(uvicorn + cloudflared)
 
 手元でファイルを用意したり Drive にアップロードする必要はない。ノートブックが全部自動でやる。
 
-### 必要なもの（初回のみ取得）
+### 必要なもの
 
-- **Google アカウント**（Drive マウント用）
-- **ngrok authtoken** → [dashboard.ngrok.com](https://dashboard.ngrok.com/get-started/your-authtoken) で無料登録して取得
+- **Google アカウント**（Drive マウント用）のみ。トークン登録不要。
 
 ### 初回セットアップ
 
 1. [colab_faceswap.ipynb を Colab で開く](https://colab.research.google.com/github/oyatuchokobi/faceswap/blob/main/colab_faceswap.ipynb)
 2. `Runtime` → `Change runtime type` → **T4 GPU** を選択して保存（**必ず保存ボタンを押す**）
-3. **Cell 1（一番上のセル）** の `NGROK_TOKEN = 'YOUR_NGROK_TOKEN'` を自分のトークンに書き換え
-4. `Runtime` → `Run all`
+3. `Runtime` → `Run all`
 
 初回は以下が自動で走る（合計 5〜10 分）:
 - GitHub からコードをクローン
 - Drive に `faceswap-data/` フォルダを作成してシンボリックリンクを設定
 - pip install
 - `inswapper_128.onnx`（554MB）を Drive にダウンロード
-- uvicorn 起動 → ngrok でトンネル開通
+- uvicorn 起動 → cloudflared でトンネル開通
 
-5. Cell 6 に表示された URL をブラウザ/スマホで開けば使える
+4. Cell 6 に表示された URL をブラウザ/スマホで開けば使える
 
 ### 2回目以降
 
@@ -214,7 +212,7 @@ Drive にモデルとキャッシュが残っているので手順 1〜3 の後 
 | 項目 | Windows | Colab |
 |------|---------|-------|
 | 推論EP | CPU / DirectML | **CUDA GPU** |
-| トンネル | cloudflared | **ngrok** |
+| トンネル | cloudflared | **cloudflared** |
 | モデル保存 | ローカル | **Google Drive** |
 | コード取得 | git pull（自動） | git pull（自動） |
 

@@ -13,7 +13,7 @@ body {
 #app {
   position: relative;
   width: 100%;
-  max-width: 430px;
+  max-width: min(100%, calc(100dvh * 9 / 16));
   height: 100dvh;
   overflow: hidden;
   background: #000;
@@ -34,6 +34,8 @@ body {
   height: 100%;
   object-fit: cover;
 }
+/* 横長参考動画: クロップせず全体表示 */
+#game-bg { object-fit: contain; }
 
 .overlay, .result-overlay {
   position: relative;
