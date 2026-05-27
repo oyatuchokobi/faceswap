@@ -59,3 +59,20 @@ async def test_result_streams_video(client, tmp_path, monkeypatch):
     res2 = await client.get(f"/api/download/{job_id}.mp4")
     assert res2.status_code == 200
     assert "attachment" in res2.headers.get("content-disposition", "")
+
+
+async def test_template_video_endpoint(client):
+    res = await client.get("/api/videos/template")
+    assert res.status_code == 200
+    assert res.headers["content-type"] == "video/mp4"
+
+
+async def test_game_video_endpoint(client):
+    res = await client.get("/api/videos/game")
+    assert res.status_code == 200
+    assert res.headers["content-type"] == "video/mp4"
+
+
+async def test_basketball_endpoint_removed(client):
+    res = await client.get("/static/basketball.mp4")
+    assert res.status_code == 404

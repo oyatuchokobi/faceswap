@@ -7,7 +7,7 @@ venv/
 models/*.onnx
 models/buffalo_*
 jobs/
-templates/basketball/
+templates/*/
 .pytest_cache/
 .coverage
 *.swp

@@ -13,7 +13,6 @@ from insightface.model_zoo import get_model
 from backend.config import (
     INSWAPPER_MODEL,
     TEMPLATE_VIDEO,
-    BATCH_SIZE,
     SSE_PROGRESS_EVERY_N_FRAMES,
 )
 from backend.ep_selector import select_providers
@@ -38,14 +37,17 @@ def get_face_app() -> FaceAnalysis:
     return _face_app
 
 
+def _face_area(face) -> float:
+    return (face.bbox[2] - face.bbox[0]) * (face.bbox[3] - face.bbox[1])
+
+
 def detect_largest_face(image: np.ndarray):
     """Return the largest face in the image, or raise FaceNotFoundError."""
     app = get_face_app()
     faces = app.get(image)
     if not faces:
         raise FaceNotFoundError("No face detected")
-    faces.sort(key=lambda f: (f.bbox[2] - f.bbox[0]) * (f.bbox[3] - f.bbox[1]), reverse=True)
-    return faces[0]
+    return max(faces, key=_face_area)
 
 
 def detect_all_faces(image: np.ndarray) -> list:
@@ -67,8 +69,7 @@ def get_swapper():
 def swap_face(target_image: np.ndarray, target_face, source_face) -> np.ndarray:
     """Swap target_face in target_image with source_face's identity."""
     swapper = get_swapper()
-    result = swapper.get(target_image, target_face, source_face, paste_back=True)
-    return result
+    return swapper.get(target_image, target_face, source_face, paste_back=True)
 
 
 def preload() -> None:
@@ -108,16 +109,13 @@ async def swap_video_job(
     # 3. Per-frame swap
     swapped_dir = output.parent / "swapped_frames"
     swapped_dir.mkdir(parents=True, exist_ok=True)
-    swapper = get_swapper()
 
     for i, frame_file in enumerate(frame_files):
         img = cv2.imread(str(frame_file))
         faces = tpl.faces_per_frame[i]
         if faces:
-            target_face = max(faces, key=lambda f: (f.bbox[2] - f.bbox[0]) * (f.bbox[3] - f.bbox[1]))
-            img = await asyncio.to_thread(
-                swapper.get, img, target_face, src_face, True
-            )
+            target_face = max(faces, key=_face_area)
+            img = await asyncio.to_thread(swap_face, img, target_face, src_face)
         out_path = swapped_dir / frame_file.name
         cv2.imwrite(str(out_path), img)
         if (i + 1) % SSE_PROGRESS_EVERY_N_FRAMES == 0:

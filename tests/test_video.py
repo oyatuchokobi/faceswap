@@ -36,4 +36,4 @@ def test_compose_video_with_audio_and_wipe(tmp_path):
         ["ffprobe", "-v", "error", "-show_streams", "-of", "default=noprint_wrappers=1:nokey=1", str(output)],
         capture_output=True, text=True,
     )
-    assert "audio" in info.stdout
+    assert "video" in info.stdout

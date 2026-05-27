@@ -1,4 +1,3 @@
-let currentJobId = null;
 let resultUrl = null;
 let downloadUrl = null;
 
@@ -9,7 +8,6 @@ export async function submitJob(faceBlob) {
   fd.append('face', faceBlob, 'face.jpg');
   const res = await fetch('/api/swap', { method: 'POST', body: fd });
   const { job_id, sse_url } = await res.json();
-  currentJobId = job_id;
   resultUrl = `/api/result/${job_id}.mp4`;
   downloadUrl = `${location.origin}/api/download/${job_id}.mp4`;
 

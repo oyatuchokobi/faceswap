@@ -1,5 +1,6 @@
 from __future__ import annotations
 import asyncio
+import json
 import logging
 import shutil
 from contextlib import asynccontextmanager
@@ -12,6 +13,7 @@ from fastapi.staticfiles import StaticFiles
 from sse_starlette.sse import EventSourceResponse
 
 from backend.config import (
+    GAME_VIDEO,
     JOB_TTL_SECONDS,
     JOBS_DIR,
     PROCESSING_TIMEOUT_SECONDS,
@@ -50,9 +52,14 @@ async def root():
     return FileResponse(FRONTEND_DIR / "index.html")
 
 
-@app.get("/static/basketball.mp4")
-async def basketball_video():
+@app.get("/api/videos/template")
+async def template_video():
     return FileResponse(TEMPLATE_VIDEO, media_type="video/mp4")
+
+
+@app.get("/api/videos/game")
+async def game_video():
+    return FileResponse(GAME_VIDEO, media_type="video/mp4")
 
 
 @app.get("/api/health")
@@ -130,14 +137,21 @@ async def job_sse(job_id: str):
             if current != last_emit:
                 yield {
                     "event": "progress",
-                    "data": f'{{"progress":{job.progress},"message":"{job.message}","status":"{job.status.value}"}}',
+                    "data": json.dumps({
+                        "progress": job.progress,
+                        "message": job.message,
+                        "status": job.status.value,
+                    }),
                 }
                 last_emit = current
 
             if job.status in (JobStatus.DONE, JobStatus.FAILED):
                 yield {
                     "event": job.status.value,
-                    "data": f'{{"status":"{job.status.value}","message":"{job.message}"}}',
+                    "data": json.dumps({
+                        "status": job.status.value,
+                        "message": job.message,
+                    }),
                 }
                 return
             await asyncio.sleep(0.5)

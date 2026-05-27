@@ -1,28 +1,140 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, sans-serif; background: #000; color: #fff; overflow: hidden; }
-.view { position: fixed; inset: 0; display: none; }
+
+body {
+  font-family: -apple-system, sans-serif;
+  background: #000;
+  color: #fff;
+  min-height: 100dvh;
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+}
+
+#app {
+  position: relative;
+  width: 100%;
+  max-width: 430px;
+  height: 100dvh;
+  overflow: hidden;
+  background: #000;
+}
+
+.view {
+  position: absolute;
+  inset: 0;
+  display: none;
+}
 .view.active { display: flex; }
-#bg-video, #game-bg, #camera, #game-camera, #result-video {
-  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+
+/* #game-camera は .wipe で管理するためグループから除外 */
+#bg-video, #game-bg, #camera, #result-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
+
 .overlay, .result-overlay {
-  position: relative; z-index: 2; margin: auto; padding: 2rem;
-  background: rgba(0,0,0,0.6); border-radius: 1rem;
-  display: flex; flex-direction: column; gap: 1rem; align-items: center;
+  position: relative;
+  z-index: 2;
+  margin: auto;
+  padding: 2rem;
+  background: rgba(0,0,0,0.6);
+  border-radius: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: center;
 }
-h1 { font-size: 3rem; }
+
+h1 { font-size: 2.2rem; text-align: center; }
+
 button.primary {
-  background: #f60; color: #fff; border: none; padding: 1rem 2rem;
-  font-size: 1.5rem; border-radius: 0.5rem; cursor: pointer;
+  background: #f60;
+  color: #fff;
+  border: none;
+  padding: 1rem 2rem;
+  font-size: 1.5rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  width: 100%;
 }
-button.secondary { background: rgba(255,255,255,0.2); color: #fff; padding: 0.5rem 1rem; border: none; border-radius: 0.25rem; cursor: pointer; }
-.hud { position: absolute; bottom: 2rem; left: 0; right: 0; padding: 1rem; text-align: center; background: rgba(0,0,0,0.5); z-index: 3; }
+
+button.secondary {
+  background: rgba(255,255,255,0.2);
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 0.25rem;
+  cursor: pointer;
+}
+
+.hud {
+  position: absolute;
+  bottom: 2rem;
+  left: 0;
+  right: 0;
+  padding: 1rem;
+  text-align: center;
+  background: rgba(0,0,0,0.5);
+  z-index: 3;
+}
+
 #game-score { font-size: 1.4rem; font-weight: bold; margin-bottom: 0.6rem; }
-.progress-row { display: flex; align-items: center; justify-content: center; gap: 0.6rem; }
+
+.progress-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+}
+
 .progress-label { font-size: 1rem; white-space: nowrap; }
 progress { width: 50%; height: 1rem; }
 #server-pct { font-size: 1.1rem; font-weight: bold; min-width: 3rem; }
+
 #qr-container { background: #fff; padding: 1rem; }
 #qr-container img { display: block; }
-#captured-preview { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; }
-#pose-canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; }
+
+#captured-preview {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #000;
+}
+
+#pose-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+}
+
+/* ── ワイプ共通 ── */
+.wipe {
+  position: absolute;
+  width: 100px;
+  aspect-ratio: 9 / 16;
+  object-fit: cover;
+  border-radius: 0.5rem;
+  opacity: 0.85;
+  border: 2px solid rgba(255,255,255,0.4);
+  z-index: 4;
+}
+.wipe--bottom-left  { left: 1rem;  bottom: 5.5rem; }
+.wipe--bottom-right { right: 1rem; bottom: 1rem; }
+
+/* ── Result overlay: 再生完了後にフェードイン ── */
+.result-overlay {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.6s ease;
+}
+.result-overlay.visible {
+  opacity: 1;
+  pointer-events: auto;
+}

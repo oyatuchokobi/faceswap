@@ -81,7 +81,7 @@ function updateUI() {
   document.getElementById('combined-progress').value = serverProgress;
   document.getElementById('server-pct').textContent = `${serverProgress}%`;
   document.getElementById('game-score').textContent =
-    `🏀 ${dribbleCount}  |  🙌 ${shootCount}`;
+    `🏃 ${dribbleCount}  |  🎯 ${shootCount}`;
 
   if (elapsed >= MIN_DURATION_MS && serverDone) {
     cleanup();

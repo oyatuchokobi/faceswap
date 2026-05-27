@@ -8,66 +8,67 @@
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 </head>
 <body>
+  <div id="app">
 
-  <!-- View 1: Landing -->
-  <section id="view-landing" class="view active">
-    <video id="bg-video" autoplay loop muted playsinline>
-      <source src="/static/basketball.mp4" type="video/mp4" />
-    </video>
-    <div class="overlay">
-      <h1>📸 あなたが主役になる</h1>
-      <button id="btn-start" class="primary">START</button>
-      <p class="hint">処理時間: 30秒〜1分</p>
-    </div>
-  </section>
-
-  <!-- View 2: Capture -->
-  <section id="view-capture" class="view">
-    <video id="camera" autoplay playsinline></video>
-    <canvas id="capture-canvas" hidden></canvas>
-    <div class="overlay">
-      <button id="btn-shutter" class="primary">📷 撮影</button>
-      <input type="file" id="upload-input" accept="image/*" hidden />
-      <button id="btn-upload" class="secondary">画像をアップロード(stg)</button>
-    </div>
-  </section>
-
-  <!-- View 3: Confirm -->
-  <section id="view-confirm" class="view">
-    <img id="captured-preview" alt="captured face" />
-    <div class="overlay">
-      <button id="btn-retake" class="secondary">撮り直す</button>
-      <button id="btn-confirm" class="primary">これでOK</button>
-    </div>
-  </section>
-
-  <!-- View 4: Minigame / Processing -->
-  <section id="view-game" class="view">
-    <video id="game-bg" loop muted playsinline>
-      <source src="/static/basketball.mp4" type="video/mp4" />
-    </video>
-    <canvas id="pose-canvas"></canvas>
-    <video id="game-camera" autoplay playsinline hidden></video>
-    <div class="hud">
-      <p id="game-score">🏀 0 &nbsp;|&nbsp; 🙌 0</p>
-      <div class="progress-row">
-        <span class="progress-label">神プレイまで</span>
-        <progress id="combined-progress" max="100" value="0"></progress>
-        <span id="server-pct">0%</span>
+    <!-- View 1: Landing -->
+    <section id="view-landing" class="view active">
+      <video id="bg-video" src="/api/videos/template" autoplay loop muted playsinline></video>
+      <div class="overlay">
+        <h1>📸 あなたが主役になる</h1>
+        <button id="btn-start" class="primary">START</button>
+        <p class="hint">処理時間: 30秒〜1分</p>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- View 5: Result -->
-  <section id="view-result" class="view">
-    <video id="result-video" autoplay controls></video>
-    <div class="result-overlay">
-      <h2>🎉 神プレイ完成!</h2>
-      <div id="qr-container"></div>
-      <p class="hint">QRをスマホで読み取ってDL</p>
-      <button id="btn-again" class="primary">もう一回</button>
-    </div>
-  </section>
+    <!-- View 2: Capture -->
+    <section id="view-capture" class="view">
+      <video id="camera" autoplay playsinline></video>
+      <canvas id="capture-canvas" hidden></canvas>
+      <div class="overlay">
+        <button id="btn-shutter" class="primary">📷 撮影</button>
+        <input type="file" id="upload-input" accept="image/*" hidden />
+        <button id="btn-upload" class="secondary">画像をアップロード(stg)</button>
+      </div>
+    </section>
+
+    <!-- View 3: Confirm -->
+    <section id="view-confirm" class="view">
+      <img id="captured-preview" alt="captured face" />
+      <div class="overlay">
+        <button id="btn-retake" class="secondary">撮り直す</button>
+        <button id="btn-confirm" class="primary">これでOK</button>
+      </div>
+    </section>
+
+    <!-- View 4: Minigame / Processing -->
+    <section id="view-game" class="view">
+      <video id="game-bg" src="/api/videos/game" loop muted playsinline></video>
+      <canvas id="pose-canvas"></canvas>
+      <video id="game-camera" class="wipe wipe--bottom-left" autoplay playsinline></video>
+      <div class="hud">
+        <p id="game-score">🏃 0 &nbsp;|&nbsp; 🎯 0</p>
+        <div class="progress-row">
+          <span class="progress-label">神プレイまで</span>
+          <progress id="combined-progress" max="100" value="0"></progress>
+          <span id="server-pct">0%</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- View 5: Result -->
+    <section id="view-result" class="view">
+      <video id="result-video" autoplay controls></video>
+      <video id="template-wipe" class="wipe wipe--bottom-right"
+             src="/api/videos/template" autoplay loop muted playsinline></video>
+      <div id="result-overlay" class="result-overlay">
+        <h2>🎉 神プレイ完成!</h2>
+        <div id="qr-container"></div>
+        <p class="hint">QRをスマホで読み取ってDL</p>
+        <button id="btn-again" class="primary">もう一回</button>
+      </div>
+    </section>
+
+  </div><!-- /#app -->
 
   <script type="module" src="/static/app.js"></script>
 </body>
