@@ -26,15 +26,18 @@ class FaceNotFoundError(ValueError):
 
 
 _face_app: Optional[FaceAnalysis] = None
+_face_app_lock = threading.Lock()
 
 
 def get_face_app() -> FaceAnalysis:
     global _face_app
     if _face_app is None:
-        providers = select_providers()
-        app = FaceAnalysis(name="buffalo_l", providers=providers)
-        app.prepare(ctx_id=0, det_size=(640, 640))
-        _face_app = app
+        with _face_app_lock:
+            if _face_app is None:
+                providers = select_providers()
+                app = FaceAnalysis(name="buffalo_l", providers=providers)
+                app.prepare(ctx_id=0, det_size=(640, 640))
+                _face_app = app
     return _face_app
 
 
